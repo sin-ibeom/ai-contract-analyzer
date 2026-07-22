@@ -64,4 +64,5 @@ dependencies {
 
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
     implementation("com.google.guava:guava:33.0.0-android")
+    implementation("com.google.code.gson:gson:2.10.1")
 }
