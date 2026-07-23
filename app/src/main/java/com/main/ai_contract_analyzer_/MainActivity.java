@@ -1,8 +1,11 @@
 package com.main.ai_contract_analyzer_;
 
 import android.os.Bundle;
+import android.widget.Button;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -30,6 +33,10 @@ import kotlin.coroutines.jvm.internal.GeneratedCodeMarkers;
 
 public class MainActivity extends AppCompatActivity {
 
+    // ActivityResultLauncher : 다른 화면을 실행하고
+    // 해당 화면에서 데이터를 가쟈온 후 반환
+    private ActivityResultLauncher<String[]> pickLauncher;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,17 +49,45 @@ public class MainActivity extends AppCompatActivity {
         });
         String API_KEY = BuildConfig.API_KEY;
 
+        setContentView(R.layout.activity_main);
+
+
+        // registerForActivityResult :
+        // 결과가 나오면 전달?
+
+        // ActivityResultContracts.OpenDocument() :
+        // 파일 탐색리를 키는 코드.
+        pickLauncher = registerForActivityResult(new ActivityResultContracts.OpenDocument(),
+                uri  -> {
+                    if(uri != null){
+                        ((TextView) findViewById(R.id.TEXTTEXT)).setText(uri + "");
+                    } else {
+                        ((TextView) findViewById(R.id.TEXTTEXT)).setText("pdf 선택 취소");
+                    }
+                });
+
+        Button OpenPdf = findViewById(R.id.button);
+        OpenPdf.setOnClickListener(view -> {
+            pickLauncher.launch(new String[]{"application/pdf"});
+        });
+
+
+
 
         Schema warningPersentage = Schema.Companion.str(
                 "warning_persentage",
                 "해당 계약서/약관을 보고 위험도 퍼센트 측정"
         );
 
-        Schema warningItem = Schema.Companion.obj (
-                "warning_item",
-                "위험 조항 항목",
-                Schema.Companion.str("warning_item_title", "위험 조항 항목의 원문"),
-                Schema.Companion.str("warning_item_dec", "위험 조항 항목애 왜 위험한지 쉬운 설명")
+        Schema warningWrapper = Schema.Companion.arr(
+                "warning_wrapper",
+                "위험 조항들을 모아둔 배열",
+                Schema.Companion.obj (
+                        "warning_item",
+                        "위험 조항 항목",
+                        Schema.Companion.str("warning_item_title", "위험 조항 항목의 원문"),
+                        Schema.Companion.str("warning_item_dec", "위험 조항 항목애 왜 위험한지 쉬운 설명")
+                )
         );
 
         Schema recommendMessage = Schema.Companion.str (
@@ -66,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
                 "analyze",
                 "계약서 분석 결과",
                 warningPersentage,
-                warningItem,
+                warningWrapper,
                 recommendMessage
         );
 
@@ -104,8 +139,10 @@ public class MainActivity extends AppCompatActivity {
             public void onSuccess(GenerateContentResponse result) {
                 runOnUiThread(() -> {
                     tv.setText(result.getText());
+                    Gemini_Analyzer(model, prompt);
                 });
             }
+
 
             @Override
             public void onFailure(Throwable t) {
