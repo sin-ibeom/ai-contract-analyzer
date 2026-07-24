@@ -1,9 +1,12 @@
 package com.main.ai_contract_analyzer_;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.pdf.PdfRenderer;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
@@ -27,6 +30,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import android.database.Cursor;
 import android.provider.OpenableColumns;
 
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -73,7 +77,6 @@ public class MainActivity extends AppCompatActivity {
         pickLauncher = registerForActivityResult(new ActivityResultContracts.OpenDocument(),
                 uri  -> {
                     if(uri != null){
-                        ((TextView) findViewById(R.id.TEXTTEXT)).setText(uri + "");
                         Cursor cursor = getContentResolver().query(uri, null, null, null, null);
                         if(cursor != null && cursor.moveToFirst()){
                             ((TextView) findViewById(R.id.TEXTTEXT)).setText(cursor.toString());
@@ -87,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
                                 fileSize = 0;
                             }
 
-                            if(fileSize > MAX_MEGABYTE){
+                            if(fileSize > MAX_SIZE){
                                 return;
                             }
 
@@ -95,13 +98,37 @@ public class MainActivity extends AppCompatActivity {
                             try {
                                 ParcelFileDescriptor pdf = getContentResolver().openFileDescriptor(uri, "r");
                                 PdfRenderer pdfRenderer = new PdfRenderer(pdf);
-                                pdfRenderer.openPage(1);
+                                ((TextView) findViewById(R.id.TEXTTEXT)).setText(fileName);
+                                PdfRenderer.Page page = pdfRenderer.openPage(0);
+
+
+                                float density = getResources().getDisplayMetrics().density;
+                                int pageWidthSize = (int) (page.getWidth() * density);
+                                int pageHeightSize = (int) (page.getHeight() * density);
+
+                                Bitmap bitmap = Bitmap.createBitmap(
+                                        pageWidthSize,
+                                        pageHeightSize,
+                                        Bitmap.Config.ARGB_8888
+                                );
+
+                                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
+                                ((ImageView) findViewById(R.id.imageView)).setImageBitmap(bitmap);
+
+                                ByteArrayOutputStream outputstream = new ByteArrayOutputStream();
+                                bitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputstream);
+                                byte[] bytes = outputstream.toByteArray();
+
+                                Bitmap combitemap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+
+                                page.close();
+                                pdfRenderer.close();
+
                             } catch (FileNotFoundException e) {
                                 throw new RuntimeException(e);
                             } catch (IOException e) {
                                 throw new RuntimeException(e);
                             }
-
 
                         }
                     } else {
@@ -115,6 +142,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
+        ////////////////////////////////////////////////////////
 
 
         Schema warningPersentage = Schema.Companion.str(
@@ -148,6 +176,7 @@ public class MainActivity extends AppCompatActivity {
                 recommendMessage
         );
 
+
         GenerationConfig.Builder configBuilder = new GenerationConfig.Builder();
         configBuilder.responseMimeType = "application/json";
         configBuilder.responseSchema = schema1;
@@ -172,28 +201,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        // 약속 상자 제작 + 요청 시작
-        ListenableFuture<GenerateContentResponse> response = model.generateContent(prompt);
-
-
-        // AI 응답 도착 시
-        Futures.addCallback(response, new FutureCallback<GenerateContentResponse>() {
-            @Override
-            public void onSuccess(GenerateContentResponse result) {
-                runOnUiThread(() -> {
-                    tv.setText(result.getText());
-                    Gemini_Analyzer(model, prompt);
-                });
-            }
-
-
-            @Override
-            public void onFailure(Throwable t) {
-                tv.setText("응답에 실패함");
-                t.printStackTrace();
-
-            }
-        }, executor);
+//        Gemini_Analyzer(model, prompt);
 
 
 
