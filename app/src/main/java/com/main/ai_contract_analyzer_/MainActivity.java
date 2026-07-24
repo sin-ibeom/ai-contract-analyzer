@@ -2,9 +2,11 @@ package com.main.ai_contract_analyzer_;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.pdf.PdfRenderer;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -25,10 +27,15 @@ import com.google.ai.client.generativeai.type.Schema;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.gson.JsonObject;
 
 
 import android.database.Cursor;
 import android.provider.OpenableColumns;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
@@ -49,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
     // 해당 화면에서 데이터를 가쟈온 후 반환
     private ActivityResultLauncher<String[]> pickLauncher;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,11 +67,18 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        String gemini_model = "gemini-2.5-flash";
         String API_KEY = BuildConfig.API_KEY;
+        GenerationConfig gc = setupConfig();
 
-        setContentView(R.layout.activity_main);
+        GenerativeModel gm = new GenerativeModel(
+                gemini_model,
+                API_KEY,
+                gc
+        );
+        GenerativeModelFutures model = GenerativeModelFutures.from(gm);
 
-
+        TextView tv = findViewById(R.id.main_text);
 
 
         // registerForActivityResult :
@@ -112,8 +127,11 @@ public class MainActivity extends AppCompatActivity {
                                         Bitmap.Config.ARGB_8888
                                 );
 
+                                Canvas canvas = new Canvas(bitmap);
+                                canvas.drawColor(android.graphics.Color.WHITE);
+
                                 page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
-                                ((ImageView) findViewById(R.id.imageView)).setImageBitmap(bitmap);
+
 
                                 ByteArrayOutputStream outputstream = new ByteArrayOutputStream();
                                 bitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputstream);
@@ -121,8 +139,13 @@ public class MainActivity extends AppCompatActivity {
 
                                 Bitmap combitemap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
 
+//                                Gemini_Analyzer(model, combitemap);
+
+                                runOnUiThread(() -> showPreviewDialog(model, combitemap));
+
                                 page.close();
                                 pdfRenderer.close();
+                                pdf.close();
 
                             } catch (FileNotFoundException e) {
                                 throw new RuntimeException(e);
@@ -144,7 +167,118 @@ public class MainActivity extends AppCompatActivity {
 
         ////////////////////////////////////////////////////////
 
+        ActivityResultLauncher<Void> cameraLauncher = registerForActivityResult(
+                new ActivityResultContracts.TakePicturePreview(),
+                bitmap -> {
+                    if(bitmap != null){
+                        ((ImageView) findViewById(R.id.imageView2)).setImageBitmap(bitmap);
+                    } else {
+                        ((TextView) findViewById(R.id.TEXTTEXT)).setText("카메라 선택 취소");
+                    }
+                }
+        );
 
+        Button OpenCamera = findViewById(R.id.button2);
+        OpenCamera.setOnClickListener(v -> {
+            cameraLauncher.launch(null);
+        });
+
+
+
+        ////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+    }
+
+    public void Gemini_Analyzer(GenerativeModelFutures model, Bitmap bitmap){
+        Executor executor = Executors.newSingleThreadExecutor();
+        TextView tv = findViewById(R.id.main_text);
+
+
+
+        Content prompt = new Content.Builder()
+                .addImage(bitmap)
+                .addText("해당 계약서를 보고 JSON에 맞춰서 보내줘, 계약서가 아니라면 그냥 없음으로 해")
+                .build();
+
+
+
+        ListenableFuture<GenerateContentResponse> response = model.generateContent(prompt);
+
+        tv.setText("제출한 계약서를 분석 중...");
+        // AI 응답 도착 시
+        Futures.addCallback(response, new FutureCallback<GenerateContentResponse>() {
+            @Override
+            public void onSuccess(GenerateContentResponse result) {
+                runOnUiThread(() -> {
+                    try {
+                        JSONObject rs = new JSONObject(result.getText());
+                        ((TextView) findViewById(R.id.warning_persentage)).setMovementMethod(new android.text.method.ScrollingMovementMethod());
+                        ((TextView) findViewById(R.id.recommend)).setMovementMethod(new android.text.method.ScrollingMovementMethod());
+                        ((TextView) findViewById(R.id.warning_item)).setMovementMethod(new android.text.method.ScrollingMovementMethod());
+
+                        ((TextView) findViewById(R.id.warning_persentage)).append(rs.getString("warning_persentage"));
+                        ((TextView) findViewById(R.id.recommend)).append(rs.getString("recommend_message"));
+
+
+                        JSONArray wrapper_arr = rs.getJSONArray("warning_wrapper");
+                        for(int i = 0; i < wrapper_arr.length(); i++){
+                            JSONObject item = wrapper_arr.getJSONObject(i);
+                            ((TextView) findViewById(R.id.warning_item))
+                                    .append("-위험 조항-\n" +
+                                            item.getString("warning_item_title") +
+                                            "-위험 조항 이유-" +
+                                            item.getString("warning_item_dec"));
+                        }
+
+
+
+                    } catch (JSONException e) {
+                        ((TextView) findViewById(R.id.TEXTTEXT)).setText("에러 발생");
+                    }
+
+                });
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                runOnUiThread(()-> {
+                    String msg;
+                    if (t instanceof java.net.UnknownHostException) {
+                        msg = "인터넷 연결을 확인해주세요.";
+                    } else if (t instanceof java.net.SocketTimeoutException) {
+                        msg = "응답 시간이 초과되었습니다. 다시 시도해주세요.";
+                    } else if (t instanceof java.net.SocketException) {
+                        msg = "서버가 응답하지 않습니다. 다시시도해 주세요.";
+                    } else if (t instanceof java.net.ConnectException) {
+                        msg = "네트워크에 연결하지 못했습니다. 다시시도해 주세요.";
+                    } else {
+                        msg = "오류: " + t.getClass().getSimpleName();
+                        Log.e("GeminiAnalyzer", "메시지: " + t.getMessage());
+                    }
+                    tv.setText(msg);
+                });
+                /*
+                OKHttpClient를 사용해서 재시도 정책
+                1 -> 2 -> 4
+
+                - 무산 -
+                 */
+
+            }
+        }, executor);
+    }
+
+    public GenerationConfig setupConfig(){
         Schema warningPersentage = Schema.Companion.str(
                 "warning_persentage",
                 "해당 계약서/약관을 보고 위험도 퍼센트 측정"
@@ -182,63 +316,39 @@ public class MainActivity extends AppCompatActivity {
         configBuilder.responseSchema = schema1;
         GenerationConfig gc = configBuilder.build();
 
-
-        GenerativeModel gm = new GenerativeModel(
-                "gemini-2.5-flash",
-                API_KEY,
-                gc
-        );
-
-        GenerativeModelFutures model = GenerativeModelFutures.from(gm);
-        TextView tv = findViewById(R.id.main_text);
-
-        Executor executor = Executors.newSingleThreadExecutor();
-        // 질문 문자열을 객체로 보내야함
-
-        String user_message = "";
-
-        Content prompt = new Content.Builder().addText(user_message).build();
-
-
-
-//        Gemini_Analyzer(model, prompt);
-
-
-
+        return gc;
     }
 
-    public void Gemini_Analyzer(GenerativeModelFutures model, Content prompt){
-        Executor executor = Executors.newSingleThreadExecutor();
-        TextView tv = findViewById(R.id.main_text);
 
-        ListenableFuture<GenerateContentResponse> response = model.generateContent(prompt);
+    ////////////////////////////////////////////////////////
+    private void showPreviewDialog(GenerativeModelFutures model, Bitmap previewBitmap) {
+        android.view.View dialogView = getLayoutInflater().inflate(R.layout.dialog_preview, null);
 
+        ImageView previewImage = dialogView.findViewById(R.id.dialog_image);
+        Button btnCancel = dialogView.findViewById(R.id.btn_cancel);
+        Button btnConfirm = dialogView.findViewById(R.id.btn_confirm);
 
-        // AI 응답 도착 시
-        Futures.addCallback(response, new FutureCallback<GenerateContentResponse>() {
-            @Override
-            public void onSuccess(GenerateContentResponse result) {
-                runOnUiThread(() -> {
-                    tv.setText(result.getText());
-                });
-            }
+        if (previewBitmap != null) {
+            previewImage.setImageBitmap(previewBitmap);
+        }
 
-            @Override
-            public void onFailure(Throwable t) {
-                if(t instanceof java.net.SocketException){
-                    tv.setText("서버가 응답하지 않습니다. 다시시도해 주세요.");
-                } else if(t instanceof java.net.ConnectException){
-                    tv.setText("네트워크에 연결하지 못했습니다. 다시시도해 주세요.");
-                } else {
-                    tv.setText("알 수 없는 오류가 발생했습니다.");
-                }
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(MainActivity.this)
+                .setView(dialogView)
+                .setCancelable(false) // 바깥 배경을 눌러서 꺼지는 것 방지
+                .create();
 
-                /*
-                OKHttpClient를 사용해서 재시도 정책
-                1 -> 2 -> 4
-                 */
+        btnCancel.setOnClickListener(v -> {
+            dialog.dismiss(); // 팝업창 닫기
+            ((TextView) findViewById(R.id.TEXTTEXT)).setText("분석을 취소했습니다.");
+        });
 
-            }
-        }, executor);
+        btnConfirm.setOnClickListener(v -> {
+            dialog.dismiss(); // 팝업창을 먼저 닫고
+            // 제미나이 분석을 시작
+            Gemini_Analyzer(model, previewBitmap);
+        });
+
+        // 6. 완성된 팝업창 보여줌
+        dialog.show();
     }
 }
