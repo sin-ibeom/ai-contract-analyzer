@@ -1,6 +1,8 @@
 package com.main.ai_contract_analyzer_;
 
+import android.graphics.pdf.PdfRenderer;
 import android.os.Bundle;
+import android.os.ParcelFileDescriptor;
 import android.widget.Button;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
@@ -21,6 +23,12 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
+
+import android.database.Cursor;
+import android.provider.OpenableColumns;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -52,15 +60,50 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
 
+
+
         // registerForActivityResult :
         // 결과가 나오면 전달?
 
         // ActivityResultContracts.OpenDocument() :
         // 파일 탐색리를 키는 코드.
+        //
+        int MAX_MEGABYTE = 50;
+        int MAX_SIZE = MAX_MEGABYTE * 1024 * 1024;
         pickLauncher = registerForActivityResult(new ActivityResultContracts.OpenDocument(),
                 uri  -> {
                     if(uri != null){
                         ((TextView) findViewById(R.id.TEXTTEXT)).setText(uri + "");
+                        Cursor cursor = getContentResolver().query(uri, null, null, null, null);
+                        if(cursor != null && cursor.moveToFirst()){
+                            ((TextView) findViewById(R.id.TEXTTEXT)).setText(cursor.toString());
+                            int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                            String fileName = cursor.getString(nameIndex);
+
+                            int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
+                            long fileSize = cursor.getLong(sizeIndex);
+
+                            if(fileSize == 0 && !(cursor.isNull(sizeIndex))){
+                                fileSize = 0;
+                            }
+
+                            if(fileSize > MAX_MEGABYTE){
+                                return;
+                            }
+
+                            cursor.close();
+                            try {
+                                ParcelFileDescriptor pdf = getContentResolver().openFileDescriptor(uri, "r");
+                                PdfRenderer pdfRenderer = new PdfRenderer(pdf);
+                                pdfRenderer.openPage(1);
+                            } catch (FileNotFoundException e) {
+                                throw new RuntimeException(e);
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+
+
+                        }
                     } else {
                         ((TextView) findViewById(R.id.TEXTTEXT)).setText("pdf 선택 취소");
                     }
