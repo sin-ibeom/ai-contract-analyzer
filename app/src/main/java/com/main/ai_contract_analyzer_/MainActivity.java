@@ -7,6 +7,7 @@ import android.graphics.pdf.PdfRenderer;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -215,6 +216,7 @@ public class MainActivity extends AppCompatActivity {
         ListenableFuture<GenerateContentResponse> response = model.generateContent(prompt);
 
         tv.setText("제출한 계약서를 분석 중...");
+        findViewById(R.id.progressBar).setVisibility(View.VISIBLE);
         // AI 응답 도착 시
         Futures.addCallback(response, new FutureCallback<GenerateContentResponse>() {
             @Override
@@ -226,18 +228,20 @@ public class MainActivity extends AppCompatActivity {
                         ((TextView) findViewById(R.id.recommend)).setMovementMethod(new android.text.method.ScrollingMovementMethod());
                         ((TextView) findViewById(R.id.warning_item)).setMovementMethod(new android.text.method.ScrollingMovementMethod());
 
-                        ((TextView) findViewById(R.id.warning_persentage)).append(rs.getString("warning_persentage"));
-                        ((TextView) findViewById(R.id.recommend)).append(rs.getString("recommend_message"));
+                        ((TextView) findViewById(R.id.warning_persentage)).append(rs.optString("warning_persentage"));
+                        ((TextView) findViewById(R.id.recommend)).append(rs.optString("recommend_message"));
+
 
 
                         JSONArray wrapper_arr = rs.getJSONArray("warning_wrapper");
+                        findViewById(R.id.progressBar).setVisibility(View.GONE);
                         for(int i = 0; i < wrapper_arr.length(); i++){
                             JSONObject item = wrapper_arr.getJSONObject(i);
                             ((TextView) findViewById(R.id.warning_item))
                                     .append("-위험 조항-\n" +
-                                            item.getString("warning_item_title") +
+                                            item.optString("warning_item_title") +
                                             "-위험 조항 이유-" +
-                                            item.getString("warning_item_dec"));
+                                            item.optString("warning_item_dec"));
                         }
 
 
