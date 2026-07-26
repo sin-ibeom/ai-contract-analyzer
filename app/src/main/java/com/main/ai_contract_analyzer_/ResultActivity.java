@@ -1,5 +1,6 @@
 package com.main.ai_contract_analyzer_;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -36,7 +37,38 @@ public class ResultActivity extends AppCompatActivity {
             TextView recommend_msg = findViewById(R.id.recommend);
 
             warn_persentage.setText(rs.optString("warning_persentage"));
-            warn_progress.setProgress(Integer.parseInt((rs.optString("warning_persentage").replace("%", "").trim())));
+            int persentage = Integer.parseInt((rs.optString("warning_persentage").replace("%", "").trim()));
+            warn_progress.setProgress(persentage);
+            // 빨강
+            if (persentage >= 90) {
+                warn_persentage.setTextColor(Color.rgb(255, 59, 48));
+            } else if (persentage >= 80) {
+                warn_persentage.setTextColor(Color.rgb(255, 105, 51));
+
+            // 주황
+            } else if (persentage >= 70) {
+                warn_persentage.setTextColor(Color.rgb(255, 149, 0));
+            } else if (persentage >= 60) {
+                warn_persentage.setTextColor(Color.rgb(255, 179, 64));
+
+            // 노랑
+            } else if (persentage >= 50) {
+                warn_persentage.setTextColor(Color.rgb(255, 204, 0));
+            } else if (persentage >= 40) {
+                warn_persentage.setTextColor(Color.rgb(235, 219, 0));
+
+            // 초록 계열
+            } else if (persentage >= 30) {
+                warn_persentage.setTextColor(Color.rgb(175, 219, 20));
+            } else if (persentage >= 20) {
+                warn_persentage.setTextColor(Color.rgb(102, 212, 69));
+            } else if (persentage >= 10) {
+                warn_persentage.setTextColor(Color.rgb(52, 199, 89));
+
+            // 파랑
+            } else {
+                warn_persentage.setTextColor(Color.rgb(0, 199, 190));
+            }
 
 
             JSONArray ja = rs.optJSONArray("warning_wrapper");
