@@ -1,5 +1,6 @@
 package com.main.ai_contract_analyzer_;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -223,31 +224,34 @@ public class MainActivity extends AppCompatActivity {
             public void onSuccess(GenerateContentResponse result) {
                 runOnUiThread(() -> {
                     try {
-                        JSONObject rs = new JSONObject(result.getText());
-                        ((TextView) findViewById(R.id.warning_persentage)).setMovementMethod(new android.text.method.ScrollingMovementMethod());
-                        ((TextView) findViewById(R.id.recommend)).setMovementMethod(new android.text.method.ScrollingMovementMethod());
-                        ((TextView) findViewById(R.id.warning_item)).setMovementMethod(new android.text.method.ScrollingMovementMethod());
+                        String rs = result.getText();
+                        Intent intent = new Intent(MainActivity.this, ResultActivity.class);
+                        intent.putExtra("JSON", rs);
+                        startActivity(intent);
 
-                        ((TextView) findViewById(R.id.warning_persentage)).append(rs.optString("warning_persentage"));
-                        ((TextView) findViewById(R.id.recommend)).append(rs.optString("recommend_message"));
+//                        ((TextView) findViewById(R.id.warning_persentage)).setMovementMethod(new android.text.method.ScrollingMovementMethod());
+//                        ((TextView) findViewById(R.id.recommend)).setMovementMethod(new android.text.method.ScrollingMovementMethod());
+//                        ((TextView) findViewById(R.id.warning_item)).setMovementMethod(new android.text.method.ScrollingMovementMethod());
+//
+//                        ((TextView) findViewById(R.id.warning_persentage)).append(rs.optString("warning_persentage"));
+//                        ((TextView) findViewById(R.id.recommend)).append(rs.optString("recommend_message"));
+//
+//
+//
+//                        JSONArray wrapper_arr = rs.getJSONArray("warning_wrapper");
+//                        for(int i = 0; i < wrapper_arr.length(); i++){
+//                            JSONObject item = wrapper_arr.getJSONObject(i);
+//                            ((TextView) findViewById(R.id.warning_item))
+//                                    .append("-위험 조항-\n" +
+//                                            item.optString("warning_item_title") +
+//                                            "-위험 조항 이유-" +
+//                                            item.optString("warning_item_dec"));
+//                        }
 
 
 
-                        JSONArray wrapper_arr = rs.getJSONArray("warning_wrapper");
+                    } finally {
                         findViewById(R.id.progressBar).setVisibility(View.GONE);
-                        for(int i = 0; i < wrapper_arr.length(); i++){
-                            JSONObject item = wrapper_arr.getJSONObject(i);
-                            ((TextView) findViewById(R.id.warning_item))
-                                    .append("-위험 조항-\n" +
-                                            item.optString("warning_item_title") +
-                                            "-위험 조항 이유-" +
-                                            item.optString("warning_item_dec"));
-                        }
-
-
-
-                    } catch (JSONException e) {
-                        ((TextView) findViewById(R.id.TEXTTEXT)).setText("에러 발생");
                     }
 
                 });

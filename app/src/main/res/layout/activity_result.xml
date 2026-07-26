@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <LinearLayout
+
+
+
+        android:layout_width="match_parent"
+
+        android:layout_height="match_parent"
+
+        android:background="#F5F7FA"
+
+        android:orientation="vertical"
+
+        android:padding="16dp"
+
+        >
+
+
+
+        <androidx.cardview.widget.CardView
+
+            android:layout_width="match_parent"
+
+            android:layout_height="wrap_content"
+
+            app:cardCornerRadius="16dp"
+
+            app:cardElevation="6dp"
+
+            app:cardUseCompatPadding="true">
+
+
+
+            <LinearLayout
+
+                android:layout_width="match_parent"
+
+                android:layout_height="wrap_content"
+
+                android:orientation="vertical"
+
+                android:padding="16dp">
+
+
+
+                <TextView
+
+                    android:layout_width="wrap_content"
+
+                    android:layout_height="wrap_content"
+
+                    android:text="🚨 위험도"
+
+                    android:textColor="#555555"
+
+                    android:textSize="16sp"
+
+                    android:textStyle="bold" />
+
+
+
+                <TextView
+
+                    android:id="@+id/warning_persentage"
+
+                    android:layout_width="match_parent"
+
+                    android:layout_height="wrap_content"
+
+                    android:layout_marginTop="8dp"
+
+                    android:layout_marginBottom="12dp"
+
+                    android:text="30%"
+
+                    android:textAlignment="center"
+
+                    android:textColor="#7DFF52"
+
+                    android:textSize="48sp"
+
+                    android:textStyle="bold" />
+
+
+
+                <ProgressBar
+
+                    android:id="@+id/warning_progressbar"
+
+                    style="?android:attr/progressBarStyleHorizontal"
+
+                    android:layout_width="match_parent"
+
+                    android:layout_height="wrap_content"
+
+                    android:max="100"
+
+                    android:progress="30"
+
+                    android:scaleY="2" />
+
+
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+
+        <androidx.cardview.widget.CardView
+
+            android:layout_width="match_parent"
+
+            android:layout_height="wrap_content"
+
+            app:cardElevation="5dp"
+
+            app:cardCornerRadius="16dp"
+
+            app:cardUseCompatPadding="true"
+
+            >
+
+            <LinearLayout
+
+                android:layout_height="wrap_content"
+                android:id="@+id/warn_list"
+
+                android:layout_width="match_parent"
+
+                android:orientation="vertical"
+
+                android:padding="16dp">
+
+
+
+                <TextView
+
+                    android:layout_height="wrap_content"
+
+                    android:layout_width="match_parent"
+
+                    android:text="📄위험 조항"
+
+                    android:textStyle="bold"
+
+                    android:textSize="16sp">
+
+
+
+                </TextView>
+
+
+
+
+
+
+
+
+            </LinearLayout>
+
+
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- 협상 포인트  -->
+        <androidx.cardview.widget.CardView
+
+            android:layout_width="match_parent"
+
+            android:layout_height="wrap_content"
+
+            app:cardElevation="5dp"
+
+            app:cardCornerRadius="16dp"
+
+            app:cardUseCompatPadding="true"
+
+            >
+
+            <LinearLayout
+
+                android:layout_height="wrap_content"
+
+                android:layout_width="match_parent"
+
+                android:orientation="vertical"
+
+                android:padding="16dp">
+
+
+
+                <TextView
+
+                    android:layout_height="wrap_content"
+
+                    android:layout_width="match_parent"
+
+                    android:text="✨협상 포인트"
+
+                    android:textStyle="bold"
+
+                    android:textSize="16sp">
+
+
+
+                </TextView>
+
+
+                <androidx.cardview.widget.CardView
+
+                    android:layout_width="match_parent"
+
+                    android:layout_height="wrap_content"
+
+                    app:cardUseCompatPadding="true"
+
+                    app:cardElevation="2dp"
+
+                    app:cardCornerRadius="5dp">
+
+
+
+                    <LinearLayout
+
+                        android:layout_height="wrap_content"
+
+                        android:layout_width="match_parent"
+
+                        android:orientation="vertical"
+
+                        android:padding="6dp">
+
+
+
+                        <TextView
+
+                            android:id="@+id/recommend"
+                            android:layout_height="wrap_content"
+
+                            android:layout_width="match_parent"
+
+                            android:text="협상 포인트 안내문"
+
+                            android:textSize="15sp">
+
+
+
+
+
+                        </TextView>
+
+
+
+
+
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
+
+
+
+
+
+            </LinearLayout>
+
+
+
+        </androidx.cardview.widget.CardView>
+
+
+
+
+
+    </LinearLayout>
+</ScrollView>
