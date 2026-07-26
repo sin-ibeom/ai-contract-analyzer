@@ -26,6 +26,7 @@ import com.google.ai.client.generativeai.type.Content;
 import com.google.ai.client.generativeai.type.GenerateContentResponse;
 import com.google.ai.client.generativeai.type.GenerationConfig;
 import com.google.ai.client.generativeai.type.Schema;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -34,6 +35,7 @@ import com.google.gson.JsonObject;
 
 import android.database.Cursor;
 import android.provider.OpenableColumns;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -139,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
                                 bitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputstream);
                                 byte[] bytes = outputstream.toByteArray();
 
+
                                 Bitmap combitemap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
 
 //                                Gemini_Analyzer(model, combitemap);
@@ -173,7 +176,12 @@ public class MainActivity extends AppCompatActivity {
                 new ActivityResultContracts.TakePicturePreview(),
                 bitmap -> {
                     if(bitmap != null){
-                        ((ImageView) findViewById(R.id.imageView2)).setImageBitmap(bitmap);
+                        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputStream);
+                        byte[] bytes = outputStream.toByteArray();
+                        Bitmap cobitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                        runOnUiThread(() -> showPreviewDialog(model, cobitmap));
+
                     } else {
                         ((TextView) findViewById(R.id.TEXTTEXT)).setText("카메라 선택 취소");
                     }
@@ -209,14 +217,15 @@ public class MainActivity extends AppCompatActivity {
 
         Content prompt = new Content.Builder()
                 .addImage(bitmap)
-                .addText("해당 계약서를 보고 JSON에 맞춰서 보내줘, 계약서가 아니라면 그냥 없음으로 해")
+                .addText("해당 계약서를 보고 JSON에 맞춰서 보내줘, 계약서가 아니라면 그냥 없음으로 해, 최대한 꼼꼼히 보며 해야해")
                 .build();
 
 
 
         ListenableFuture<GenerateContentResponse> response = model.generateContent(prompt);
 
-        tv.setText("제출한 계약서를 분석 중...");
+        tv.setText("분석하는 동안 화면을 종료하지 마세요.");
+        Toast.makeText(this, "계약서 분석 중...", Toast.LENGTH_SHORT).show();
         findViewById(R.id.progressBar).setVisibility(View.VISIBLE);
         // AI 응답 도착 시
         Futures.addCallback(response, new FutureCallback<GenerateContentResponse>() {
@@ -229,6 +238,7 @@ public class MainActivity extends AppCompatActivity {
                         intent.putExtra("JSON", rs);
                         startActivity(intent);
 
+                        // 옛 코드
 //                        ((TextView) findViewById(R.id.warning_persentage)).setMovementMethod(new android.text.method.ScrollingMovementMethod());
 //                        ((TextView) findViewById(R.id.recommend)).setMovementMethod(new android.text.method.ScrollingMovementMethod());
 //                        ((TextView) findViewById(R.id.warning_item)).setMovementMethod(new android.text.method.ScrollingMovementMethod());
@@ -270,6 +280,8 @@ public class MainActivity extends AppCompatActivity {
                     } else if (t instanceof java.net.ConnectException) {
                         msg = "네트워크에 연결하지 못했습니다. 다시시도해 주세요.";
                     } else {
+                        Snackbar.make(findViewById(R.id.main), "알 수 없는 오류가 발생했습니다.", Snackbar.LENGTH_SHORT)
+                                .show();
                         msg = "오류: " + t.getClass().getSimpleName();
                         Log.e("GeminiAnalyzer", "메시지: " + t.getMessage());
                     }
