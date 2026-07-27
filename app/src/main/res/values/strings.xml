@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">ai-contract-analyzer_</string>
+    <string name="app_name">계약돋보기</string>
     <string name="title_activity_result">ResultActivity</string>
 </resources>
