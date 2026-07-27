@@ -30,28 +30,18 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.gson.JsonObject;
 
 
 import android.database.Cursor;
 import android.provider.OpenableColumns;
 import android.widget.Toast;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.lang.reflect.Type;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-
-import kotlin.coroutines.jvm.internal.GeneratedCodeMarkers;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -71,16 +61,22 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        String gemini_model = "gemini-2.5-flash";
         String API_KEY = BuildConfig.API_KEY;
+        String gemini_model = "gemini-2.5-flash";
+        int MAX_MEGABYTE = 50;
+        int MAX_SIZE = MAX_MEGABYTE * 1024 * 1024;
         GenerationConfig gc = setupConfig();
-
         GenerativeModel gm = new GenerativeModel(
                 gemini_model,
                 API_KEY,
                 gc
         );
         GenerativeModelFutures model = GenerativeModelFutures.from(gm);
+
+
+        // ------
+
+
 
         TextView tv = findViewById(R.id.main_text);
 
@@ -91,8 +87,6 @@ public class MainActivity extends AppCompatActivity {
         // ActivityResultContracts.OpenDocument() :
         // 파일 탐색리를 키는 코드.
         //
-        int MAX_MEGABYTE = 50;
-        int MAX_SIZE = MAX_MEGABYTE * 1024 * 1024;
         pickLauncher = registerForActivityResult(new ActivityResultContracts.OpenDocument(),
                 uri  -> {
                     if(uri != null){
@@ -112,43 +106,47 @@ public class MainActivity extends AppCompatActivity {
                             if(fileSize > MAX_SIZE){
                                 return;
                             }
-
                             cursor.close();
+
+
+                            ArrayList<Bitmap> bitmapArrayList = new ArrayList<>();
+
                             try {
                                 ParcelFileDescriptor pdf = getContentResolver().openFileDescriptor(uri, "r");
                                 PdfRenderer pdfRenderer = new PdfRenderer(pdf);
                                 ((TextView) findViewById(R.id.TEXTTEXT)).setText(fileName);
-                                PdfRenderer.Page page = pdfRenderer.openPage(0);
+
+                                for(int i = 0; i < pdfRenderer.getPageCount(); i++){
+                                    PdfRenderer.Page page = pdfRenderer.openPage(i);
+
+                                    float density = getResources().getDisplayMetrics().density;
+                                    int pageWidthSize = (int) (page.getWidth() * density);
+                                    int pageHeightSize = (int) (page.getHeight() * density);
+
+                                    Bitmap bitmap = Bitmap.createBitmap(
+                                            pageWidthSize,
+                                            pageHeightSize,
+                                            Bitmap.Config.ARGB_8888
+                                    );
+
+                                    Canvas canvas = new Canvas(bitmap);
+                                    canvas.drawColor(android.graphics.Color.WHITE);
+
+                                    page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
 
 
-                                float density = getResources().getDisplayMetrics().density;
-                                int pageWidthSize = (int) (page.getWidth() * density);
-                                int pageHeightSize = (int) (page.getHeight() * density);
-
-                                Bitmap bitmap = Bitmap.createBitmap(
-                                        pageWidthSize,
-                                        pageHeightSize,
-                                        Bitmap.Config.ARGB_8888
-                                );
-
-                                Canvas canvas = new Canvas(bitmap);
-                                canvas.drawColor(android.graphics.Color.WHITE);
-
-                                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
+                                    ByteArrayOutputStream outputstream = new ByteArrayOutputStream();
+                                    bitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputstream);
+                                    byte[] bytes = outputstream.toByteArray();
 
 
-                                ByteArrayOutputStream outputstream = new ByteArrayOutputStream();
-                                bitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputstream);
-                                byte[] bytes = outputstream.toByteArray();
+                                    Bitmap t = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                                    bitmapArrayList.add(t);
 
+                                    page.close();
+                                }
+                                runOnUiThread(() -> showPreviewDialog(model, bitmapArrayList));
 
-                                Bitmap combitemap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-
-//                                Gemini_Analyzer(model, combitemap);
-
-                                runOnUiThread(() -> showPreviewDialog(model, combitemap));
-
-                                page.close();
                                 pdfRenderer.close();
                                 pdf.close();
 
@@ -169,8 +167,7 @@ public class MainActivity extends AppCompatActivity {
             pickLauncher.launch(new String[]{"application/pdf"});
         });
 
-
-        ////////////////////////////////////////////////////////
+        // CAMERA
 
         ActivityResultLauncher<Void> cameraLauncher = registerForActivityResult(
                 new ActivityResultContracts.TakePicturePreview(),
@@ -194,20 +191,10 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-
-        ////////////////////////////////////////////////////////
-
-
-
-
-
-
-
-
-
-
-
     }
+
+    //////////////////////////////////////////////////////////////////////////////////////////
+
 
     public void Gemini_Analyzer(GenerativeModelFutures model, Bitmap bitmap){
         Executor executor = Executors.newSingleThreadExecutor();
@@ -215,12 +202,87 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        Content prompt = new Content.Builder()
+        Content.Builder content = new Content.Builder()
                 .addImage(bitmap)
-                .addText("해당 계약서를 보고 JSON에 맞춰서 보내줘, 계약서가 아니라면 그냥 없음으로 해, 최대한 꼼꼼히 보며 해야해")
-                .build();
+                .addText(
+                        "1. 해당 계약서를 보고 JSON에 맞춰서 보내줘 " +
+                                "2. 계약서가 아니라면 그냥 없음으로 표시해 다른거 작성 금지 " +
+                                "3. 최대한 꼼꼼히 보며 해" +
+                                "4. 설명은 쉽게 (비유 금지!!!)");
+
+        Content prompt = content.build();
+
+        ListenableFuture<GenerateContentResponse> response = model.generateContent(prompt);
+
+        tv.setText("분석하는 동안 화면을 종료하지 마세요.");
+        Toast.makeText(this, "계약서 분석 중...", Toast.LENGTH_SHORT).show();
+        findViewById(R.id.progressBar).setVisibility(View.VISIBLE);
+        // AI 응답 도착 시
+        Futures.addCallback(response, new FutureCallback<GenerateContentResponse>() {
+            @Override
+            public void onSuccess(GenerateContentResponse result) {
+                runOnUiThread(() -> {
+                    try {
+                        String rs = result.getText();
+                        Intent intent = new Intent(MainActivity.this, ResultActivity.class);
+                        intent.putExtra("JSON", rs);
+                        startActivity(intent);
+                    } finally {
+                        findViewById(R.id.progressBar).setVisibility(View.GONE);
+                    }
+
+                });
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                runOnUiThread(()-> {
+                    String msg;
+                    if (t instanceof java.net.UnknownHostException) {
+                        msg = "인터넷 연결을 확인해주세요.";
+                    } else if (t instanceof java.net.SocketTimeoutException) {
+                        msg = "응답 시간이 초과되었습니다. 다시 시도해주세요.";
+                    } else if (t instanceof java.net.SocketException) {
+                        msg = "서버가 응답하지 않습니다. 다시시도해 주세요.";
+                    } else if (t instanceof java.net.ConnectException) {
+                        msg = "네트워크에 연결하지 못했습니다. 다시시도해 주세요.";
+                    } else {
+                        msg = "오류: " + t.getClass().getSimpleName();
+                        Log.e("GeminiAnalyzer", "메시지: " + t.getMessage());
+                    }
+                    Snackbar.make(findViewById(R.id.main), msg, Snackbar.LENGTH_SHORT)
+                            .show();
+                    tv.setText(msg);
+                });
+                /*
+                OKHttpClient를 사용해서 재시도 정책
+                1 -> 2 -> 4
+
+                - 무산 -
+                 */
+
+            }
+        }, executor);
+    }
+
+    public void Gemini_Analyzer(GenerativeModelFutures model, ArrayList<Bitmap> bitmap){
+        Executor executor = Executors.newSingleThreadExecutor();
+        TextView tv = findViewById(R.id.main_text);
 
 
+
+         Content.Builder content = new Content.Builder()
+                .addText(
+                        "1. 해당 계약서를 보고 JSON에 맞춰서 보내줘 " +
+                        "2. 계약서가 아니라면 그냥 없음으로 표시해 다른거 작성 금지 " +
+                        "3. 최대한 꼼꼼히 보며 해" +
+                        "4. 설명은 쉽게 (비유 금지!!!)");
+
+        for(int i = 0; i < bitmap.size(); i++){
+            content.addImage(bitmap.get(i));
+        }
+
+        Content prompt = content.build();
 
         ListenableFuture<GenerateContentResponse> response = model.generateContent(prompt);
 
@@ -280,11 +342,11 @@ public class MainActivity extends AppCompatActivity {
                     } else if (t instanceof java.net.ConnectException) {
                         msg = "네트워크에 연결하지 못했습니다. 다시시도해 주세요.";
                     } else {
-                        Snackbar.make(findViewById(R.id.main), "알 수 없는 오류가 발생했습니다.", Snackbar.LENGTH_SHORT)
-                                .show();
                         msg = "오류: " + t.getClass().getSimpleName();
                         Log.e("GeminiAnalyzer", "메시지: " + t.getMessage());
                     }
+                    Snackbar.make(findViewById(R.id.main), msg, Snackbar.LENGTH_SHORT)
+                            .show();
                     tv.setText(msg);
                 });
                 /*
@@ -298,6 +360,7 @@ public class MainActivity extends AppCompatActivity {
         }, executor);
     }
 
+    // 제미나이에게 보낼 계약 JSON 세팅
     public GenerationConfig setupConfig(){
         Schema warningPersentage = Schema.Companion.str(
                 "warning_persentage",
@@ -339,18 +402,38 @@ public class MainActivity extends AppCompatActivity {
         return gc;
     }
 
-
-    ////////////////////////////////////////////////////////
-    private void showPreviewDialog(GenerativeModelFutures model, Bitmap previewBitmap) {
+    // 분석 여부 팝업창 열기
+    private void showPreviewDialog(GenerativeModelFutures model, ArrayList<Bitmap> previewBitmap) {
         android.view.View dialogView = getLayoutInflater().inflate(R.layout.dialog_preview, null);
 
+        int[] now_page = {0};
+
+        TextView count = dialogView.findViewById(R.id.tv_page_count);
+        Button prev = dialogView.findViewById(R.id.btn_prev);
+        Button next = dialogView.findViewById(R.id.btn_next);
         ImageView previewImage = dialogView.findViewById(R.id.dialog_image);
         Button btnCancel = dialogView.findViewById(R.id.btn_cancel);
         Button btnConfirm = dialogView.findViewById(R.id.btn_confirm);
-
         if (previewBitmap != null) {
-            previewImage.setImageBitmap(previewBitmap);
+            previewImage.setImageBitmap(previewBitmap.get(now_page[0]));
         }
+
+
+        next.setOnClickListener(view -> {
+            if (previewBitmap != null && now_page[0] < previewBitmap.size() - 1) {
+                now_page[0] += 1;
+                count.setText(now_page + " / " + previewBitmap.size() + " 페이지");
+                previewImage.setImageBitmap(previewBitmap.get(now_page[0]));
+            }
+        });
+
+        prev.setOnClickListener(view -> {
+            if (previewBitmap != null || now_page[0] > 0) {
+                now_page[0] -= 1;
+                count.setText(now_page + " / " + previewBitmap.size() + " 페이지");
+                previewImage.setImageBitmap(previewBitmap.get(now_page[0]));
+            }
+        });
 
         android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(MainActivity.this)
                 .setView(dialogView)
@@ -364,11 +447,55 @@ public class MainActivity extends AppCompatActivity {
 
         btnConfirm.setOnClickListener(v -> {
             dialog.dismiss(); // 팝업창을 먼저 닫고
+
             // 제미나이 분석을 시작
-            Gemini_Analyzer(model, previewBitmap);
+            if(previewImage != null){
+                Gemini_Analyzer(model, previewBitmap);
+            }
         });
 
         // 6. 완성된 팝업창 보여줌
         dialog.show();
     }
+
+
+    private void showPreviewDialog(GenerativeModelFutures model, Bitmap previewBitmap) {
+        android.view.View dialogView = getLayoutInflater().inflate(R.layout.dialog_preview, null);
+
+        TextView count = dialogView.findViewById(R.id.tv_page_count);
+        Button prev = dialogView.findViewById(R.id.btn_prev);
+        Button next = dialogView.findViewById(R.id.btn_next);
+        ImageView previewImage = dialogView.findViewById(R.id.dialog_image);
+        Button btnCancel = dialogView.findViewById(R.id.btn_cancel);
+        Button btnConfirm = dialogView.findViewById(R.id.btn_confirm);
+
+        prev.setVisibility(View.GONE);
+        next.setVisibility(View.GONE);
+        count.setVisibility(View.GONE);
+
+        if (previewBitmap != null) {
+            previewImage.setImageBitmap(previewBitmap);
+
+            android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(MainActivity.this)
+                    .setView(dialogView)
+                    .setCancelable(false)
+                    .create();
+
+            btnCancel.setOnClickListener(v -> {
+                dialog.dismiss();
+                ((TextView) findViewById(R.id.TEXTTEXT)).setText("분석을 취소했습니다.");
+            });
+
+            btnConfirm.setOnClickListener(v -> {
+                dialog.dismiss();
+
+                if(previewImage != null){
+                    Gemini_Analyzer(model, previewBitmap);
+                }
+            });
+
+            dialog.show();
+        }
+    }
 }
+
