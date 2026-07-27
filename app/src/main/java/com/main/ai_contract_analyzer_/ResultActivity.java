@@ -40,7 +40,7 @@ public class ResultActivity extends AppCompatActivity {
             LinearLayout warn_list = findViewById(R.id.warn_list);
             TextView recommend_msg = findViewById(R.id.recommend);
 
-            if((rs.optString("warning_persentage")).equals("없음")){
+            if(!((rs.optString("warning_persentage")).contains("없음"))){
                 warn_persentage.setText(rs.optString("warning_persentage"));
                 int persentage = Integer.parseInt((rs.optString("warning_persentage").replace("%", "").trim()));
                 warn_progress.setProgress(persentage);

@@ -380,7 +380,7 @@ public class MainActivity extends AppCompatActivity {
 
         Schema recommendMessage = Schema.Companion.str (
                 "recommend_message",
-                "협상 포인트"
+                "협상 포인트 문장으로"
         );
 
         // obj
