@@ -13,4 +13,6 @@
     <color name="text_gray">#546E7A</color>
     <color name="text_white">#FFFFFF</color>
     <color name="card_background">#E9E9E9</color>
+    <color name="bb">#475569</color>
+    <color name="aa">#E2E8F0</color>
 </resources>

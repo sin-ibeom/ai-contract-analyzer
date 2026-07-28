@@ -11,4 +11,7 @@
     <color name="text_gray">#FFFFFF</color>
     <color name="text_white">#213149</color>
     <color name="card_background">#8A8A8A</color>
+    <color name="aa">#E2E8F0</color>
+    <color name="bb">#FFFFFF</color>
+
 </resources>
