@@ -4,4 +4,11 @@
         <!-- Customize your dark theme here. -->
         <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
     </style>
+    <color name="background">#1D1D1D</color>
+    <color name="main_color">#E6EBFF</color>
+    <color name="sub_color">#213149</color>
+    <color name="gray_color">#475569</color>
+    <color name="text_gray">#FFFFFF</color>
+    <color name="text_white">#213149</color>
+    <color name="card_background">#8A8A8A</color>
 </resources>
