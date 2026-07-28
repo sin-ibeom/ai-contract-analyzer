@@ -345,7 +345,12 @@ public class MainActivity extends AppCompatActivity {
                         msg = "오류: " + t.getClass().getSimpleName();
                         Log.e("GeminiAnalyzer", "메시지: " + t.getMessage());
                     }
-                    Snackbar.make(findViewById(R.id.main), msg, Snackbar.LENGTH_SHORT)
+                    Snackbar.make(findViewById(R.id.main), msg, Snackbar.LENGTH_SHORT).setAction("다시시도", new View.OnClickListener() {
+                                @Override
+                                public void onClick(View view) {
+                                    Gemini_Analyzer(model, bitmap);
+                                }
+                            })
                             .show();
                     tv.setText(msg);
                 });
