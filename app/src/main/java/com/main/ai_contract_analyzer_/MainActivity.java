@@ -419,6 +419,7 @@ public class MainActivity extends AppCompatActivity {
         ImageView previewImage = dialogView.findViewById(R.id.dialog_image);
         Button btnCancel = dialogView.findViewById(R.id.btn_cancel);
         Button btnConfirm = dialogView.findViewById(R.id.btn_confirm);
+        count.setText(now_page[0] + " / " + previewBitmap.size() + " 페이지");
         if (previewBitmap != null) {
             previewImage.setImageBitmap(previewBitmap.get(now_page[0]));
         }
