@@ -424,11 +424,6 @@ public class MainActivity extends AppCompatActivity {
         int c2 = ContextCompat.getColor(this, R.color.card_background);
         count.setText(now_page[0] + " / " + previewBitmap.size() + " 페이지");
         // 테스트 코드
-        if (previewBitmap != null) {
-            previewImage.setImageBitmap(previewBitmap.get(now_page[0]));
-            prev.setBackgroundColor(c1);
-            prev.setText("");
-        }
 
 
         next.setOnClickListener(view -> {
@@ -436,16 +431,6 @@ public class MainActivity extends AppCompatActivity {
                 now_page[0] += 1;
                 count.setText(now_page[0] + " / " + previewBitmap.size() + " 페이지");
                 previewImage.setImageBitmap(previewBitmap.get(now_page[0]));
-
-                if(now_page[0] == previewBitmap.size()){
-                    next.setBackgroundColor(c1);
-                    next.setText("");
-                } else {
-                    next.setBackgroundColor(c2);
-                    next.setText("BTN");
-                    prev.setBackgroundColor(c2);
-                    prev.setText("BTN");
-                }
 
 
             }
@@ -458,7 +443,6 @@ public class MainActivity extends AppCompatActivity {
                 count.setText(now_page[0] + " / " + previewBitmap.size() + " 페이지");
                 previewImage.setImageBitmap(previewBitmap.get(now_page[0]));
 
-//                if(now_page )
 
             }
         });
