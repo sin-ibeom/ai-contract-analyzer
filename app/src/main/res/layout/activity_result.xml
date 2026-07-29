@@ -129,5 +129,14 @@
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="제공하는 답변은 법적 책임이 따르는 공식 자문이 아닌 단순 참고용 정보로만 활용해야 합니다"
+        android:textAlignment="center"
+        android:textColor="@color/cc"
+        android:textSize="16sp">
+
+    </TextView>
 </LinearLayout>
 </ScrollView>
