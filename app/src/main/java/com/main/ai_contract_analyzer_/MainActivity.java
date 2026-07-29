@@ -427,7 +427,7 @@ public class MainActivity extends AppCompatActivity {
         next.setOnClickListener(view -> {
             if (previewBitmap != null && now_page[0] < previewBitmap.size() - 1) {
                 now_page[0] += 1;
-                count.setText(now_page + " / " + previewBitmap.size() + " 페이지");
+                count.setText(now_page[0] + " / " + previewBitmap.size() + " 페이지");
                 previewImage.setImageBitmap(previewBitmap.get(now_page[0]));
             }
         });
@@ -435,7 +435,7 @@ public class MainActivity extends AppCompatActivity {
         prev.setOnClickListener(view -> {
             if (previewBitmap != null || now_page[0] > 0) {
                 now_page[0] -= 1;
-                count.setText(now_page + " / " + previewBitmap.size() + " 페이지");
+                count.setText(now_page[0] + " / " + previewBitmap.size() + " 페이지");
                 previewImage.setImageBitmap(previewBitmap.get(now_page[0]));
             }
         });
