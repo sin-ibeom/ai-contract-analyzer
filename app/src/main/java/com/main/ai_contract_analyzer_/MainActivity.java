@@ -434,7 +434,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         prev.setOnClickListener(view -> {
-            if (previewBitmap != null || now_page[0] > 0) {
+            if (previewBitmap != null && now_page[0] > 0) {
                 now_page[0] -= 1;
                 count.setText(now_page[0] + " / " + previewBitmap.size() + " 페이지");
                 previewImage.setImageBitmap(previewBitmap.get(now_page[0]));
@@ -452,15 +452,13 @@ public class MainActivity extends AppCompatActivity {
         });
 
         btnConfirm.setOnClickListener(v -> {
-            dialog.dismiss(); // 팝업창을 먼저 닫고
+            dialog.dismiss(); // 팝업창 닫기
 
-            // 제미나이 분석을 시작
             if(previewImage != null){
                 Gemini_Analyzer(model, previewBitmap);
             }
         });
 
-        // 6. 완성된 팝업창 보여줌
         dialog.show();
     }
 
