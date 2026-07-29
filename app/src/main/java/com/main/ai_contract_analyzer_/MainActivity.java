@@ -16,6 +16,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -419,9 +420,14 @@ public class MainActivity extends AppCompatActivity {
         ImageView previewImage = dialogView.findViewById(R.id.dialog_image);
         Button btnCancel = dialogView.findViewById(R.id.btn_cancel);
         Button btnConfirm = dialogView.findViewById(R.id.btn_confirm);
+        int c1 = ContextCompat.getColor(this, R.color.background);
+        int c2 = ContextCompat.getColor(this, R.color.card_background);
         count.setText(now_page[0] + " / " + previewBitmap.size() + " 페이지");
+        // 테스트 코드
         if (previewBitmap != null) {
             previewImage.setImageBitmap(previewBitmap.get(now_page[0]));
+            prev.setBackgroundColor(c1);
+            prev.setText("");
         }
 
 
@@ -430,7 +436,20 @@ public class MainActivity extends AppCompatActivity {
                 now_page[0] += 1;
                 count.setText(now_page[0] + " / " + previewBitmap.size() + " 페이지");
                 previewImage.setImageBitmap(previewBitmap.get(now_page[0]));
+
+                if(now_page[0] == previewBitmap.size()){
+                    next.setBackgroundColor(c1);
+                    next.setText("");
+                } else {
+                    next.setBackgroundColor(c2);
+                    next.setText("BTN");
+                    prev.setBackgroundColor(c2);
+                    prev.setText("BTN");
+                }
+
+
             }
+
         });
 
         prev.setOnClickListener(view -> {
@@ -438,6 +457,9 @@ public class MainActivity extends AppCompatActivity {
                 now_page[0] -= 1;
                 count.setText(now_page[0] + " / " + previewBitmap.size() + " 페이지");
                 previewImage.setImageBitmap(previewBitmap.get(now_page[0]));
+
+//                if(now_page )
+
             }
         });
 
